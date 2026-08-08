@@ -1,7 +1,7 @@
 import express from "express";
 import {
   listAllTransactions,
-  //getTransactionById,
+  getTransactionById,
   //updateTransactionById,
   createTransaction,
   //deleteTransactionById,
@@ -11,7 +11,7 @@ const router = express.Router();
 router.get("/", listAllTransactions);
 router.post("/", createTransaction);
 
-// router.get("/:id", getTransactionById);
+router.get("/:id", getTransactionById);
 // router.put("/:id", updateTransactionById);
 // router.delete("/:id", deleteTransactionById);
 

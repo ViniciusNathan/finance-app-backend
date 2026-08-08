@@ -17,8 +17,18 @@ const createTransaction = async (req, res) => {
 
 //listar todas as transações
 const listAllTransactions = async (req, res) => {
-    const allTransactions = await prisma.transaction.findMany();
-    res.json(allTransactions)
+  const allTransactions = await prisma.transaction.findMany();
+  res.json(allTransactions);
 };
 
-export { createTransaction, listAllTransactions };
+//Buscar transações pelo id
+const getTransactionById = async (req, res) => {
+  const transaction = await prisma.transaction.findUnique({
+    where: {
+      id: Number(req.params.id),
+    },
+  });
+  res.json(transaction);
+};
+
+export { createTransaction, listAllTransactions, getTransactionById };
