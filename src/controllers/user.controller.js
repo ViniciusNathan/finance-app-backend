@@ -1,7 +1,6 @@
 import prisma from "../lib/prisma.js";
 
 // Lê nome, email e password no corpo da requisição, cria a user no banco - POST
-
 const createUser = async (req, res) => {
   const user = await prisma.user.create({
     
@@ -22,4 +21,19 @@ const createUser = async (req, res) => {
   res.json(user);
 };
 
-export default createUser;
+// Lista os usuários do banco - GET
+const listAllUsers = async (req, res) => {
+  const allUsers = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    }
+  })
+  res.json(allUsers)
+}
+
+export {
+  createUser,
+  listAllUsers
+} 
