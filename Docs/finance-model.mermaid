@@ -1,0 +1,40 @@
+erDiagram
+%% er == Entidade-Relacionamento
+    USER {
+        int id PK
+        string name
+        string email UK
+        string password_hash
+        date createdAt
+    }
+
+    CATEGORY {
+        int id PK
+        string name
+        int user_id FK
+    }
+
+    RECURRING_TRANSACTION {
+        int id PK
+        decimal value
+        int category_id FK
+        int month_day
+        date initial_day
+        boolean is_active
+        int user_id FK
+    }
+
+    TRANSACTION {
+        int id PK
+        decimal value
+        date transaction_date
+        int category_id FK
+        int recurring_transaction_id FK "optional"
+        enum division_type "BOTH / USER1_PAYS / USER2_PAYS"
+        int user_id FK
+    }
+
+    CATEGORY ||--o{ TRANSACTION : "classifies"
+    CATEGORY ||--o{ RECURRING_TRANSACTION : "classifies"
+    RECURRING_TRANSACTION ||--o{ TRANSACTION : "generates"
+    USER ||--o{ TRANSACTION : "registers"
