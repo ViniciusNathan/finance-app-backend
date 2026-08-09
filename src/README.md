@@ -15,4 +15,12 @@ routes/***.routes.js -> o que existe nesse recurso (o cardápio de operações d
 ## Controllers
 controllers/***.controller.js -> Como cada operação funciona de verdade
 
+req.params — dados que vêm embutidos na própria URL
+req.body — dados que vêm no corpo da requisição, geralmente um JSON
+
+**where** -> Qual registro eu devo modificar
+**data** -> Quais valores eu devo escrever nessa linha
+**select** -> O que eu devolvo pra você, depois de terminar
+
+
 priview .md ⇧⌘V

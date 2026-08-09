@@ -53,7 +53,7 @@ model RecurringTransaction {
 
 model Transaction {
   id                     Int                   @id @default(autoincrement())
-  value                  Decimal
+  value                  Decimal               @db.Decimal(10,2)
   transactionDate        DateTime
   categoryId             Int
   category               Category              @relation(fields: [categoryId], references: [id])
