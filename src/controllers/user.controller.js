@@ -1,13 +1,17 @@
 import prisma from "../lib/prisma.js";
+import { hash, compare } from "bcryptjs";
 
 // Lê nome, email e password no corpo da requisição, cria a user no banco - POST
 const createUser = async (req, res) => {
+  //Função para hashear a senha baseado no bcryptjs
+  const passwordHashed = await hash(req.body.password, 12);
+
   const user = await prisma.user.create({
     //O que salva no banco
     data: {
       name: req.body.name,
       email: req.body.email,
-      passwordHash: req.body.password,
+      passwordHash: passwordHashed,
     },
 
     //não devolve password. Por segurança não devemos trafegar senhas
