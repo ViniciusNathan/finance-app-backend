@@ -32,7 +32,7 @@ const listAllUsers = async (req, res) => {
   res.json(allUsers);
 };
 
-//busca user pelo id
+//busca user pelo id - GET
 const getUserById = async (req, res) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -47,7 +47,7 @@ const getUserById = async (req, res) => {
   res.json(user);
 };
 
-//atualiza user pelo id
+//atualiza user pelo id - PUT
 const updateUserById = async (req, res) => {
   const user = await prisma.user.update({
     //Qual registro eu devo modificar
@@ -69,7 +69,7 @@ const updateUserById = async (req, res) => {
   res.json(user);
 };
 
-//deleta user pelo id
+//deleta user pelo id - DELETE
 const deleteUserById = async (req, res) => {
   const user = await prisma.user.delete({
     where: {
