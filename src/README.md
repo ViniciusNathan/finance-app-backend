@@ -1,4 +1,6 @@
 
+20 endpoints
+
 ## Fluxo de uma requisição
 1. app.js recebe a requisição e manda pro routes/index.js
 2. routes/index.js redireciona pro arquivo de rotas do recurso (ex: /users -> user.routes.js)
@@ -56,5 +58,9 @@ req.body — dados que vêm no corpo da requisição, geralmente um JSON
     git branch -d feat/<entidade>-crud
 
 
+### Comandos
 #### Visualizar .md no vscode
 preview .md ⇧⌘V
+
+#### Rodar prisma server
+npx prisma studio

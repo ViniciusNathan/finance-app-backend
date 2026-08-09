@@ -1,6 +1,6 @@
 import prisma from "../lib/prisma.js";
 
-//recebe valor, data da transação, categoria, divisão e id do usuário
+//recebe valor, data da transação, categoria, divisão e id do usuário - POST
 const createTransaction = async (req, res) => {
   const transaction = await prisma.transaction.create({
     //O que salva no banco
@@ -15,13 +15,13 @@ const createTransaction = async (req, res) => {
   res.json(transaction);
 };
 
-//listar todas as transações
+//listar todas as transações - GET
 const listAllTransactions = async (req, res) => {
   const allTransactions = await prisma.transaction.findMany();
   res.json(allTransactions);
 };
 
-//Buscar transações pelo id
+//Buscar transações pelo id - GET
 const getTransactionById = async (req, res) => {
   const transaction = await prisma.transaction.findUnique({
     where: {
@@ -31,7 +31,7 @@ const getTransactionById = async (req, res) => {
   res.json(transaction);
 };
 
-//atualizar dados da transação pelo id
+//atualizar dados da transação pelo id - PUT
 const updateTransactionById = async (req, res) => {
   const transaction = await prisma.transaction.update({
     //Qual registro eu devo modificar
@@ -49,7 +49,7 @@ const updateTransactionById = async (req, res) => {
   res.json(transaction);
 };
 
-//deletar transação pelo ID
+//deletar transação pelo ID - DELETE
 const deleteTransactionById = async (req, res) => {
   const transaction = await prisma.transaction.delete({
     where: {
