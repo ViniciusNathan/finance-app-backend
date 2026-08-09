@@ -22,5 +22,39 @@ req.body — dados que vêm no corpo da requisição, geralmente um JSON
 **data** -> Quais valores eu devo escrever nessa linha
 **select** -> O que eu devolvo pra você, depois de terminar
 
+## Fluxo de trabalho com Git
 
-priview .md ⇧⌘V
+1. Criar branch nova a partir da main:
+   git checkout -b feat/<entidade>-crud
+
+2. Desenvolver e testar a funcionalidade
+
+3. Conferir o que será commitado:
+   git status
+
+4. Adicionar as mudanças ao staging:
+   git add .
+
+5. Commitar (Conventional Commits):
+   git commit -m "feat: descrição da mudança"
+
+6. Subir a branch pro GitHub (primeira vez, associando com o remoto):
+   git push -u origin feat/<entidade>-crud
+   (nas vezes seguintes, dentro da mesma branch, só "git push")
+
+7. Abrir um Pull Request no GitHub (Draft PR se ainda não terminou tudo)
+
+8. Quando terminar: finalizar o PR e dar merge na main (pela interface do GitHub)
+
+9.  Voltar pra main localmente:
+   git checkout main
+
+10. Puxar as atualizações que vieram do merge:
+    git pull
+
+11. Apagar a branch local que já foi mergeada:
+    git branch -d feat/<entidade>-crud
+
+
+#### Visualizar .md no vscode
+preview .md ⇧⌘V
