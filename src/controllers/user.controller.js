@@ -1,5 +1,6 @@
 import prisma from "../lib/prisma.js";
 import { hash, compare } from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // Lê nome, email e password no corpo da requisição, cria a user no banco - POST
 const createUser = async (req, res) => {
@@ -108,11 +109,11 @@ const loginUser = async (req, res) => {
     },
   });
   //checar se password do user existe e é igual ao do banco
-    // Busca usuário por email.
-    // Se não achou → erro 401, para.
-    // Se achou, compara senha.
-    // Se senha errada → mesmo erro 401, para.
-    // Se chegou até aqui (sem ter dado return) → login válido!
+  // Busca usuário por email.
+  // Se não achou → erro 401, para.
+  // Se achou, compara senha.
+  // Se senha errada → mesmo erro 401, para.
+  // Se chegou até aqui (sem ter dado return) → login válido!
   if (user == null) {
     res.status(401).json({
       message: "email ou senha incorreto",
@@ -124,11 +125,16 @@ const loginUser = async (req, res) => {
     res.status(401).json({
       message: "email ou senha incorreto",
     });
-    return
+    return;
   }
+  //Gera um token JWT com o id do usuário, assinado com a chave secreta, válido por 30 dias
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
   res.json({
-    message: "login efetuado"
-  })
+    id: user.id,
+    token,
+  });
 };
 
 export {
