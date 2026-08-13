@@ -6,13 +6,14 @@ import {
   updateRecurringTransactionById,
   deleteRecurringTransactionById,
 } from "../controllers/recurringTransaction.controller.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
-router.post("/", createRecurringTransaction);
-router.get("/", listAllRecurringTransactions);
+router.post("/", authMiddleware, createRecurringTransaction);
+router.get("/", authMiddleware, listAllRecurringTransactions);
 
-router.get("/:id", getRecurringTransactionById);
-router.put("/:id", updateRecurringTransactionById);
-router.delete("/:id", deleteRecurringTransactionById);
+router.get("/:id", authMiddleware, getRecurringTransactionById);
+router.put("/:id", authMiddleware, updateRecurringTransactionById);
+router.delete("/:id", authMiddleware, deleteRecurringTransactionById);
 
 export default router;
