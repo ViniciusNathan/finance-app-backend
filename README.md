@@ -62,12 +62,26 @@ Login com email inexistente e login com senha incorreta retornam exatamente a me
 **Categorias por usuário (1-para-muitos, não muitos-para-muitos)**
 Cada usuário tem suas próprias categorias, de forma independente — dois usuários podem ter categorias com o mesmo nome sem conflito. Modelagem simples, sem necessidade de uma tabela de junção.
 
+## Autenticação
+
+**Fluxo:**
+1. Usuário se cadastra (`POST /users`) — a senha é hasheada com `bcryptjs` antes de ser salva
+2. Usuário faz login (`POST /users/login`) com email e senha
+3. Servidor valida as credenciais e retorna um JWT (`jsonwebtoken`), válido por 30 dias, contendo o `id` do usuário
+4. Em requisições futuras a rotas protegidas, o cliente envia esse token no header:
+5. Um middleware (`src/middlewares/auth.middleware.js`) intercepta a requisição antes do controller: extrai o token do header, verifica sua validade com `jwt.verify()`, e — se válido — anexa o `id` do usuário em `req.userId`, disponível para o controller seguinte usar
+
+**Erros tratados pelo middleware:**
+- Header `Authorization` ausente → 401
+- Token malformado (sem a parte após "Bearer") → 401
+- Token inválido, adulterado ou expirado → 401 (capturado via `try/catch`, já que `jwt.verify` lança uma exceção em vez de retornar `null`)
+
 ## Segurança — decisões conscientes e pendências
 
 - ✅ Senhas hasheadas com salt (bcryptjs, custo 12)
 - ✅ Autenticação via JWT, chave secreta fora do código-fonte (variável de ambiente, nunca commitada)
 - ✅ Mensagens de erro de login não vazam se o problema foi o email ou a senha
-- ⏳ Middleware de autenticação para proteger rotas (em andamento)
+- ✅ Middleware de autenticação protegendo rotas sensíveis, validando o token via header `Authorization`
 - 🔜 OAuth "Continue com Google" — planejado para depois da autenticação por senha estar sólida, já que o cadastro via Google não usa `passwordHash`
 - 🔜 Refresh token — para permitir revogar acesso sem esperar a expiração do JWT
 
@@ -88,6 +102,14 @@ Cada usuário tem suas próprias categorias, de forma independente — dois usu�
 git pull
 11. Apagar a branch local que já foi mergeada:
 git branch -d feat/<entidade-ou-funcionalidade>
+
+## Testes manuais (Postman)
+
+Todos os endpoints são testados manualmente via Postman antes de cada commit, cobrindo:
+- Caminho feliz (dado válido, resposta esperada)
+- Ausência de campos obrigatórios
+- IDs inexistentes (404 ou objeto vazio, dependendo do endpoint)
+- Rotas protegidas: sem token, com token inválido, e com token válido — confirmando que o middleware bloqueia os dois primeiros casos e libera o terceiro
 
 ## Comandos úteis
 
