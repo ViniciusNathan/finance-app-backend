@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  email                 String                 @unique
+  passwordHash          String
+  createdAt             DateTime               @default(now())
+  categories            Category[]
+  recurringTransactions RecurringTransaction[]
+  transactions          Transaction[]
+
+  @@map("users")
+}
+
+model Category {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  userId                Int
+  user                  User                   @relation(fields: [userId], references: [id])
+  recurringTransactions RecurringTransaction[]
+  transactions          Transaction[]
+
+  @@map("categories")
+}
+
+model RecurringTransaction {
+  id           Int           @id @default(autoincrement())
+  value        Decimal       @db.Decimal(10,2)
+  categoryId   Int
+  category     Category      @relation(fields: [categoryId], references: [id])
+  monthDay     Int
+  initialDay   DateTime
+  isActive     Boolean       @default(true)
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@map("recurring_transactions")
+}
+
+model Transaction {
+  id                     Int                   @id @default(autoincrement())
+  value                  Decimal               @db.Decimal(10,2)
+  transactionDate        DateTime
+  categoryId             Int
+  category               Category              @relation(fields: [categoryId], references: [id])
+  recurringTransactionId Int?
+  recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id])
+  divisionType           DivisionType
+  userId                 Int
+  user                   User                  @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+enum DivisionType {
+  BOTH
+  USER1_PAYS
+  USER2_PAYS
+}
