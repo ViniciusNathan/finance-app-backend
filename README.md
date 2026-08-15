@@ -107,21 +107,23 @@ Deploys de Prisma em ambiente serverless historicamente sofrem com um problema: 
 
 ## Fluxo de trabalho com Git
 
-1. Criar branch nova a partir da main:
+1. Criar branch nova a partir da main: **git checkout -b feat/<entidade-ou-funcionalidade>**
+    Type: feat, fix, docs, chore, refactor or test
 2. Desenvolver e testar a funcionalidade
-3. Conferir o que será commitado:
-4. Adicionar as mudanças ao staging:
-5. Commitar (Conventional Commits):
+3. Conferir o que será commitado: **git status**
+4. Adicionar as mudanças ao staging: **git add .** (para adicionar tudo)
+5. Commitar (Conventional Commits — tipos: chore, docs, feat, fix, refactor, style, test):
+   **git commit -m "tipo: descrição"**
 6. Subir a branch pro GitHub (primeira vez, associando com o remoto):
-   git push -u origin feat/<entidade-ou-funcionalidade>
+   **git push -u origin feat/<entidade-ou-funcionalidade>**
    (nas vezes seguintes, dentro da mesma branch, só `git push`)
 7. Abrir um Pull Request no GitHub (Draft PR se ainda não terminou tudo)
 8. Quando terminar: finalizar o PR e dar merge na main (pela interface do GitHub)
-9. Voltar pra main localmente: git checkout main
-10. Puxar as atualizações que vieram do merge:
-git pull
-11. Apagar a branch local que já foi mergeada:
-git branch -d feat/<entidade-ou-funcionalidade>
+9. Voltar pra main localmente: **git checkout main**
+10. Puxar as atualizações que vieram do merge: **git pull**
+11. Limpar referências de branches remotas já deletadas: **git fetch --prune**
+12. Apagar a branch local que já foi mergeada: **git branch -d feat/<entidade-ou-funcionalidade>**
+"Esse fluxo se repete a cada nova funcionalidade"
 
 ## Testes manuais (Postman)
 
