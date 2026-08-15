@@ -10,7 +10,7 @@ API REST para controle de finanças domésticas compartilhadas entre dois usuár
 - **Banco de dados:** PostgreSQL
 - **Autenticação:** JWT (`jsonwebtoken`) + hash de senha (`bcryptjs`)
 - **Testes de API:** Postman
-- **Hospedagem planejada:** Firebase / Google Cloud (serverless)
+- **Hospedagem:** Firebase / Google Cloud (serverless) — Cloud Functions (2ª gen), rodando sobre Cloud Run, região `southamerica-east1`. Já deployado.
 - **Cliente:** app Flutter consumindo essa API (em desenvolvimento futuro)
 
 ## Fluxo de uma requisição
@@ -61,6 +61,26 @@ Login com email inexistente e login com senha incorreta retornam exatamente a me
 
 **Categorias por usuário (1-para-muitos, não muitos-para-muitos)**
 Cada usuário tem suas próprias categorias, de forma independente — dois usuários podem ter categorias com o mesmo nome sem conflito. Modelagem simples, sem necessidade de uma tabela de junção.
+
+## Infraestrutura e Deploy
+
+**Cloud SQL — edição Enterprise (não Enterprise Plus)**
+Para instâncias PostgreSQL 16+, o Cloud SQL usa Enterprise Plus como edição padrão — mas essa edição não oferece os tiers de máquina mais baratos (shared-core), obrigando um tamanho mínimo de máquina desnecessário para um ambiente de desenvolvimento sem tráfego real. Selecionando Enterprise explicitamente, foi possível usar o preset "Sandbox" (2 vCPU, 8 GB RAM), reduzindo o custo de milhares para poucos dólares por mês. Trade-off aceito: Enterprise Plus oferece SLA maior, cache de dados e recuperação mais rápida — recursos que fazem sentido para produção com tráfego real, não para este estágio do projeto.
+
+**IP privado, sem IP público**
+A instância do Cloud SQL não possui IP público — só é acessível de dentro da VPC do projeto. Decisão consciente de segurança: elimina a superfície de ataque de um banco de dados exposto à internet, mesmo que protegido por firewall/IAM. Trade-off aceito: acesso administrativo (rodar migrations, inspecionar dados) da máquina local exige uma camada extra de infraestrutura (ver Bastion VM, abaixo), já que a rede privada não é alcançável diretamente de fora do Google Cloud.
+
+**VPC Connector (Serverless VPC Access)**
+Cloud Functions, por padrão, não tem acesso à rede privada (VPC) do projeto — precisa de uma ponte explícita. O VPC Connector cumpre esse papel, permitindo que a função alcance o IP privado do Cloud SQL. Configurado com `vpcConnectorEgressSettings: PRIVATE_RANGES_ONLY`, para que só o tráfego destinado a IPs privados passe pela VPC — chamadas a serviços externos continuam saindo direto pela internet, sem overhead desnecessário.
+
+**Bastion VM + IAP para acesso administrativo**
+Como o Cloud SQL não tem IP público, a máquina local não consegue se conectar diretamente para rodar migrations ou inspecionar dados. A solução: uma VM pequena (`e2-micro`) dentro da mesma VPC, sem IP público próprio, acessada via SSH através do Identity-Aware Proxy (IAP) — que autentica pela conta Google, sem expor porta SSH à internet. Um túnel de encaminhamento de porta (`ssh -L`) usa essa VM como ponte: a máquina local conecta em `localhost:5433`, que é encaminhado pela VM até o IP privado do banco. O Prisma, do lado do desenvolvedor, não sabe que está atravessando esse túnel — só enxerga `localhost`.
+
+**Secret Manager para a `DATABASE_URL`**
+Em ambiente local, a string de conexão do banco vive no `.env` (fora do controle de versão). Em produção, não existe arquivo `.env` — a Cloud Function usa o Secret Manager do Google Cloud, que guarda o segredo de forma criptografada e o disponibiliza como variável de ambiente somente em runtime. A string nunca fica escrita em nenhum arquivo do repositório ou do container.
+
+**Prisma 7 sem engine Rust (`provider = "prisma-client"`)**
+Deploys de Prisma em ambiente serverless historicamente sofrem com um problema: o Prisma Client é gerado com um "engine" binário específico da plataforma onde `prisma generate` foi executado (ex: macOS), que não é compatível com o Linux do ambiente de produção. A partir do Prisma 7, o gerador `prisma-client` (usado neste projeto, junto com o driver adapter `@prisma/adapter-pg`) elimina esse binário: a conexão passa a ser feita via driver JavaScript puro (`pg`), sem depender de nenhum engine compilado. Esse problema simplesmente não existe nesta configuração.
 
 ## Autenticação
 
@@ -123,3 +143,33 @@ npx prisma studio
 
 **Rodar migration do Prisma:**
 npx prisma migrate dev
+
+**Abrir túnel SSH até o Cloud SQL (dev), via bastion VM:**
+gcloud compute ssh bastion-db \
+  --zone=southamerica-east1-a \
+  --tunnel-through-iap \
+  -- -L 5433:IP_PRIVADO_DO_CLOUD_SQL:5432 -N
+
+(mantenha esse terminal aberto enquanto for rodar comandos contra o banco cloud)
+
+**Conectar no banco cloud via psql (com túnel aberto):**
+psql "host=localhost port=5433 dbname=postgres user=postgres sslmode=require"
+
+**Rodar migration contra o banco cloud:**
+Trocar temporariamente a `DATABASE_URL` do `.env` para apontar para `localhost:5433` (com `sslmode=require`), com o túnel SSH aberto, depois:
+npx prisma migrate dev
+
+**Deploy da Cloud Function:**
+cd functions
+npx prisma generate
+firebase deploy --only functions
+
+## Ambientes
+
+Ter apenas "ambiente local" e "produção" cria um problema clássico: código que só foi testado na máquina do desenvolvedor pode falhar de formas inesperadas assim que roda em condições reais de nuvem (rede, variáveis de ambiente, permissões, latência) — o clássico "funciona na minha máquina". Um ambiente intermediário, que espelha a infraestrutura de produção mas não tem usuários reais, existe justamente para capturar esse tipo de problema antes que ele chegue a quem usa o app de verdade.
+
+Por isso, o projeto usa três camadas:
+
+- **Local** — Postgres rodando na própria máquina do desenvolvedor. Usado no dia a dia de desenvolvimento e testes rápidos, sem custo, sem depender de rede.
+- **Dev (nuvem)** — instância `finance-app-db-dev` no Cloud SQL, com a Cloud Function já deployada e acessível publicamente. Usado para validar que a integração com a infraestrutura real (rede privada, Secret Manager, ambiente serverless) funciona antes de existir produção de verdade. Não tem garantia de disponibilidade ou dados persistentes — pode ser resetado a qualquer momento.
+- **Produção** — ainda não criada. Será uma segunda instância Cloud SQL (`finance-app-db-prod`) e uma segunda
