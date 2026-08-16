@@ -82,6 +82,16 @@ Em ambiente local, a string de conexão do banco vive no `.env` (fora do control
 **Prisma 7 sem engine Rust (`provider = "prisma-client"`)**
 Deploys de Prisma em ambiente serverless historicamente sofrem com um problema: o Prisma Client é gerado com um "engine" binário específico da plataforma onde `prisma generate` foi executado (ex: macOS), que não é compatível com o Linux do ambiente de produção. A partir do Prisma 7, o gerador `prisma-client` (usado neste projeto, junto com o driver adapter `@prisma/adapter-pg`) elimina esse binário: a conexão passa a ser feita via driver JavaScript puro (`pg`), sem depender de nenhum engine compilado. Esse problema simplesmente não existe nesta configuração.
 
+**Certificado TLS do Cloud SQL (`server-ca.pem`)**
+A conexão entre a Cloud Function e o Cloud SQL usa `sslmode=verify-ca`, validando o certificado do servidor contra a autoridade certificadora (CA) da própria instância — em vez de `sslmode=require`/`no-verify`, que pulam essa verificação. Isso exige um arquivo de certificado (`functions/certs/server-ca.pem`) presente no momento do deploy.
+
+Esse arquivo **não é versionado no Git**: ele é específico da instância Cloud SQL atual (gerado pelo Google no momento da criação da instância, não escolhido por quem desenvolve), e seria invalidado se a instância for recriada. Antes do primeiro deploy — ou depois de recriar a instância — é necessário gerá-lo novamente:
+
+mkdir -p functions/certs
+gcloud sql instances describe finance-app-db-dev --format="value(serverCaCert.cert)" > functions/certs/server-ca.pem
+
+Nota técnica: a biblioteca `pg` (usada pelo driver adapter do Prisma) trata `sslmode=require`/`verify-ca` como alias de `verify-full` por padrão, o que quebra a verificação ao conectar por IP (em vez de hostname). É necessário adicionar `uselibpqcompat=true` na `DATABASE_URL` para restaurar o comportamento esperado do `verify-ca`.
+
 ## Autenticação
 
 **Fluxo:**
@@ -107,22 +117,22 @@ Deploys de Prisma em ambiente serverless historicamente sofrem com um problema: 
 
 ## Fluxo de trabalho com Git
 
-1. Criar branch nova a partir da main: **git checkout -b feat/<entidade-ou-funcionalidade>**
+1. Criar branch nova a partir da main: `git checkout -b feat/<entidade-ou-funcionalidade>`
     Type: feat, fix, docs, chore, refactor or test
 2. Desenvolver e testar a funcionalidade
-3. Conferir o que será commitado: **git status**
-4. Adicionar as mudanças ao staging: **git add .** (para adicionar tudo)
+3. Conferir o que será commitado: `git status`
+4. Adicionar as mudanças ao staging: `git add .` (para adicionar tudo)
 5. Commitar (Conventional Commits — tipos: chore, docs, feat, fix, refactor, style, test):
-   **git commit -m "tipo: descrição"**
+   `git commit -m "tipo: descrição"`
 6. Subir a branch pro GitHub (primeira vez, associando com o remoto):
-   **git push -u origin feat/<entidade-ou-funcionalidade>**
+   `git push -u origin feat/<entidade-ou-funcionalidade>`
    (nas vezes seguintes, dentro da mesma branch, só `git push`)
 7. Abrir um Pull Request no GitHub (Draft PR se ainda não terminou tudo)
 8. Quando terminar: finalizar o PR e dar merge na main (pela interface do GitHub)
-9. Voltar pra main localmente: **git checkout main**
-10. Puxar as atualizações que vieram do merge: **git pull**
-11. Limpar referências de branches remotas já deletadas: **git fetch --prune**
-12. Apagar a branch local que já foi mergeada: **git branch -d feat/<entidade-ou-funcionalidade>**
+9. Voltar pra main localmente: `git checkout main`
+10. Puxar as atualizações que vieram do merge: `git pull`
+11. Limpar referências de branches remotas já deletadas: `git fetch --prune`
+12. Apagar a branch local que já foi mergeada: `git branch -d feat/<entidade-ou-funcionalidade>`
 "Esse fluxo se repete a cada nova funcionalidade"
 
 ## Testes manuais (Postman)
