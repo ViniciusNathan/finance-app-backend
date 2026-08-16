@@ -1,3 +1,4 @@
 node_modules/
 *.localc
 generated/
+certs/
